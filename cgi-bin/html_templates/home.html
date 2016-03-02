@@ -1,0 +1,27 @@
+<html>
+
+<head>
+<title>Yagra</title>
+</head>
+
+<body>
+
+<p>Hello {0[email]}!</p>
+
+<p><a href="logout.py">Log out</a></p>
+
+<p><img src="{0[image_url]}" /></p>
+
+<p><a href="remove_image.py">Remove image</a></p>
+
+<form enctype="multipart/form-data" action="upload.py" method="post">
+    <p>
+        <input type="file" name="userfile" />
+        <input type="submit" name="upload" value="Upload" />
+    </p>
+</form>
+
+</body>
+
+</html>
+
