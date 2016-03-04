@@ -5,6 +5,7 @@ from __future__ import print_function
 from common import populate_html
 
 import os
+import hashlib
 import cgi
 import MySQLdb
 import Cookie
@@ -58,10 +59,12 @@ def generate_output(email, password):
                                     passwd="1234", db="yagra")
     db_cursor = db_connection.cursor()
 
-    UserInformation = namedtuple("UserInformation", "email, password")
+    UserInformation = namedtuple(
+        "UserInformation", 
+        "email, salt, password_hash, random_password_hash")
 
     # Fetch user information from database
-    db_cursor.execute("""SELECT email, password
+    db_cursor.execute("""SELECT email, salt, passwd_hash, random_passwd_hash
                          FROM users
                          WHERE email = %s""", (email,))
     record = db_cursor.fetchone()
@@ -76,18 +79,41 @@ def generate_output(email, password):
 
     user_info = UserInformation._make(record)
 
+    # Note that both salt and hash are in binary form
+    # Note that salt is in binary form 
+    # while password is in ascii or hexadecimal text
+    input_password_hash = hashlib.sha256(user_info.salt + password).digest()
+
     # Wrong password
-    if password != user_info.password:
+    if (input_password_hash != user_info.password_hash and 
+            input_password_hash != user_info.random_password_hash):
         print("Content-type: text/html")
         print(cookie)
         print()
         print(populate_html("signin.html", dict(email=email)))
         return
 
-    # Login successful
-    cookie["password"] = password
-    # TODO: move expire time to config file
-    cookie["password"]["expires"] = 60
+    # Else login successful
+
+    # If signin by password
+    if input_password_hash == user_info.password_hash:
+        # Generate a new random password as cookie and invalidate the old one
+        # TODO: random password expires some time later
+        # TODO: move constants to config file
+        random_password = os.urandom(32).encode("hex").upper()
+
+        random_password_hash = (
+            hashlib.sha256(user_info.salt + random_password).digest())
+
+        db_cursor.execute("""UPDATE users 
+                             SET random_passwd_hash = %s
+                             WHERE email = %s""", 
+                          (random_password_hash, email))
+        db_connection.commit()
+
+        cookie["password"] = random_password
+        cookie["password"]["expires"] = 60
+
     print("Location: home.py")
     print(cookie)
     print()
