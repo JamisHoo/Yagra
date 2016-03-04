@@ -71,8 +71,7 @@ def generate_output(email, password):
 
     print("Content-type: text/html")
     print()
-    print(populate_html("home.html", dict(email=email, password=password,
-                                          image_url=image_url)))
+    print(populate_html("home.html", dict(email=email, image_url=image_url)))
 
 
 try:
