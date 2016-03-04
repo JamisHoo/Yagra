@@ -53,7 +53,6 @@ def generate_output(email, password):
         print(populate_html("signin.html", dict(email=email)))
         return
 
-    # TODO: package db-select operation to a separate function
     # TODO: move MySQL info to config file
     db_connection = MySQLdb.connect(host="localhost", user="root",
                                     passwd="1234", db="yagra")
