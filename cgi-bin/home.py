@@ -6,6 +6,7 @@ from common import populate_html
 
 import os
 import cgi
+import hashlib
 import base64
 import MySQLdb
 import Cookie
@@ -33,11 +34,14 @@ def generate_output(email, password):
                                     passwd="1234", db="yagra")
     db_cursor = db_connection.cursor()
 
-    UserInformation = namedtuple("UserInformation",
-                                 "email, password, no_image, email_hash")
+    UserInformation = namedtuple(
+        "UserInformation",
+        """email, email_hash, salt, password_hash, random_password_hash,
+           no_image""")
 
     # Fetch user information from database
-    db_cursor.execute("""SELECT email, password, ISNULL(image), email_hash
+    db_cursor.execute("""SELECT email, email_hash, salt, passwd_hash,
+                                random_passwd_hash, ISNULL(image)
                          FROM users
                          WHERE email = %s""", (email,))
     record = db_cursor.fetchone()
@@ -50,8 +54,11 @@ def generate_output(email, password):
 
     user_info = UserInformation._make(record)
 
+    input_password_hash = hashlib.sha256(user_info.salt + password).digest()
+
     # Wrong password
-    if password != user_info.password:
+    if (input_password_hash != user_info.password_hash and
+            input_password_hash != user_info.random_password_hash):
         print("Location: signin.py")
         print()
         return
