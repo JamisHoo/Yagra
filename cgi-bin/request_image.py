@@ -37,14 +37,16 @@ def generate_output(email_hash):
                          FROM users
                          WHERE email_hash = %s""",
                       (base64.b16decode(email_hash.upper()),))
-    image = db_cursor.fetchone()[0]
+    record = db_cursor.fetchone()
 
     # Could not find this user
-    if not image:
+    if not record:
         print("Status: 404 Not Found")
         print("Content-type: text/html")
         print()
         return
+
+    image = record[0]
 
     # User found
     image_subtype = imghdr.what("", h=image)
