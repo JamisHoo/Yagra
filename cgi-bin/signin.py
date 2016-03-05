@@ -78,7 +78,6 @@ def generate_output(email, password):
 
     user_info = UserInformation._make(record)
 
-    # Note that both salt and hash are in binary form
     # Note that salt is in binary form 
     # while password is in ascii or hexadecimal text
     input_password_hash = hashlib.sha256(user_info.salt + password).digest()
