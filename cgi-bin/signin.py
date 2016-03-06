@@ -60,10 +60,11 @@ def generate_output(email, password):
 
     UserInformation = namedtuple(
         "UserInformation", 
-        "email, salt, password_hash, random_password_hash")
+        "email, salt, password_hash, random_password_hash, activated")
 
     # Fetch user information from database
-    db_cursor.execute("""SELECT email, salt, passwd_hash, random_passwd_hash
+    db_cursor.execute("""SELECT email, salt, passwd_hash, random_passwd_hash,
+                                ISNULL(activate_token)
                          FROM users
                          WHERE email = %s""", (email,))
     record = db_cursor.fetchone()
@@ -77,6 +78,15 @@ def generate_output(email, password):
         return
 
     user_info = UserInformation._make(record)
+
+    # User signed up but not yet activted
+    if not user_info.activated:
+        print("Content-type: text/html")
+        print(cookie)
+        print()
+        print(populate_html("signin.html", dict(email=email)))
+        return
+
 
     # Note that salt is in binary form 
     # while password is in ascii or hexadecimal text

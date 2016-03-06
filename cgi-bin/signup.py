@@ -46,7 +46,6 @@ def generate_output(email, password):
     password_hash = hashlib.sha256(salt + password).digest()
     activate_token = os.urandom(32)
     
-    # TODO: check activate token field when signing in and resetting password
     try:
         db_cursor.execute(
             """INSERT INTO users 
