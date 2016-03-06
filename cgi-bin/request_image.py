@@ -14,7 +14,7 @@ import MySQLdb
 
 def process_input():
     request_uri = os.environ.get("REQUEST_URI")
-    # TODO: think about leading zero in email hash
+
     email_hash = os.path.basename(request_uri)
 
     generate_output(email_hash)
