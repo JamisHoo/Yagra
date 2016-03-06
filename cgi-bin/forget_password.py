@@ -44,7 +44,6 @@ def generate_output(email):
     # Else generate a random token for resetting password 
     # This token expires after a period of time or after it's used 
     # This token also expires after the user logs in or requests another token
-    # TODO: invalidate this token after the user logs in
     # TODO: move constants to config file
     token = os.urandom(32)
     token_expires = int(time.time()) + 900  # 15-min

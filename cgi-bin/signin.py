@@ -60,11 +60,13 @@ def generate_output(email, password):
 
     UserInformation = namedtuple(
         "UserInformation", 
-        "email, salt, password_hash, random_password_hash, activated")
+        """email, salt, password_hash, random_password_hash, activated,
+           resetting_password""")
 
     # Fetch user information from database
     db_cursor.execute("""SELECT email, salt, passwd_hash, random_passwd_hash,
-                                ISNULL(activate_token)
+                                ISNULL(activate_token),
+                                NOT ISNULL(reset_passwd_token)
                          FROM users
                          WHERE email = %s""", (email,))
     record = db_cursor.fetchone()
@@ -121,6 +123,15 @@ def generate_output(email, password):
 
         cookie["password"] = random_password
         cookie["password"]["expires"] = 60
+
+        # Invalidate the token if this user is resetting password
+        if user_info.resetting_password:
+            db_cursor.execute("""UPDATE users
+                                 SET reset_passwd_token = NULL,
+                                     reset_passwd_token_expires = NULL
+                                 WHERE email = %s""",
+                              (email,))
+            db_connection.commit()
 
     print("Location: home.py")
     print(cookie)
