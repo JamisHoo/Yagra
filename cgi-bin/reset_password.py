@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from collections import namedtuple
 
 from common import config
 from common.response import text_response, populate_html, redirect
@@ -11,8 +12,6 @@ import string
 import hashlib
 import cgi
 import MySQLdb
-
-from collections import namedtuple
 
 
 def process_input():
