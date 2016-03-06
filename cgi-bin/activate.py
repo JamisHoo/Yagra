@@ -2,6 +2,9 @@
 
 from __future__ import print_function
 
+from common import config
+from common.response import text_response, populate_html, redirect
+
 import string
 import cgi
 import MySQLdb
@@ -18,17 +21,16 @@ def process_input():
 
 def generate_output(token):
     # Token is not provided or not follows the format
-    if (not token or len(token) != 64 or
+    if (not token or len(token) != config.activation_token_length * 2 or
             any(c not in string.hexdigits for c in token)):
-        print("Content-type: text/html")
-        print()
-        print("Where's token?")
+        print(text_response("text/plain", "Invalid token"))
         return
 
-    db_connection = MySQLdb.connect(host="localhost", user="root",
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
     db_cursor = db_connection.cursor()
-    
+
     # Find this token in db
     db_cursor.execute("""SELECT email
                          FROM users
@@ -37,21 +39,17 @@ def generate_output(token):
 
     # Token not found
     if not record:
-        print("Content-type: text/html")
-        print()
-        print("Invalid token")
+        print(text_response("text/plain", "Invalid token"))
         return
-    
+
     email = record[0]
-    
+
     db_cursor.execute("""UPDATE users
-                         SET activate_token = NULL 
+                         SET activate_token = NULL
                          WHERE email = %s""", (email,))
     db_connection.commit()
 
-    print("Content-type: text/html")
-    print()
-    print("Account activation successful")
+    print(text_response("text/plain", "Account activation successful"))
 
 
 try:

@@ -2,7 +2,8 @@
 
 from __future__ import print_function
 
-from common import populate_html
+from common import config
+from common.response import text_response, populate_html, redirect
 
 import os
 import time
@@ -21,25 +22,30 @@ def process_input():
     token = form.getfirst("token")
     password = form.getfirst("password")
 
-    generate_output(token, password)
+    request_method = os.environ.get("REQUEST_METHOD")
+
+    generate_output(token, password, request_method)
 
 
-def generate_output(token, password):
-    if (not token or len(token) != 64 or
+def generate_output(token, password, request_method):
+    if (not token or len(token) != config.password_reset_token_length * 2 or
             any(c not in string.hexdigits for c in token)):
-        print("Content-type: text/html")
-        print()
-        print("Invalid token")
+        print(text_response("text/plain", "Empty token"))
         return
 
     if not password:
-        print("Content-type: text/html")
-        print()
-        print(populate_html("reset_password.html", dict(token=token)))
+        if request_method == "POST":
+            print(text_response("text/plain", "Empty password"))
+        else:
+            message_body = populate_html("reset_password.html",
+                                         dict(token=token))
+            print(text_response("text/html", message_body))
         return
 
-    db_connection = MySQLdb.connect(host="localhost", user="root",
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
+
     db_cursor = db_connection.cursor()
 
     TokenInformation = namedtuple("TokenInformation",
@@ -55,21 +61,17 @@ def generate_output(token, password):
 
     # Could not find this token
     if not record:
-        print("Content-type: text/html")
-        print()
-        print("Invalid token")
+        print(text_response("text/plain", "Invalid token"))
         return
 
     token_info = TokenInformation._make(record)
 
     if token_info.token_expires < int(time.time()):
-        print("Content-type: text/html")
-        print()
-        print("Token expired")
+        print(text_response("text/plain", "Token expired"))
         return
 
     # Else reset salt and password
-    new_salt = os.urandom(32)
+    new_salt = os.urandom(config.salt_length)
     password_hash = hashlib.sha256(new_salt + password).digest()
 
     db_cursor.execute("""UPDATE users
@@ -81,9 +83,7 @@ def generate_output(token, password):
                       (new_salt, password_hash, token_info.email))
     db_connection.commit()
 
-    print("Content-type: text/html")
-    print()
-    print("Reset successful")
+    print(text_response("text/plain", "Reset successful"))
 
 
 try:

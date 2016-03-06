@@ -2,6 +2,9 @@
 
 from __future__ import print_function
 
+from common import config
+from common.response import text_response, populate_html, redirect, not_found
+
 import os
 import sys
 import string
@@ -24,13 +27,12 @@ def generate_output(email_hash):
     # Invalid hash, hexadecimal MD5 hash value should be 32 bytes
     if (len(email_hash) != hashlib.md5().digest_size * 2 or
             any(c not in string.hexdigits for c in email_hash)):
-        print("Status: 404 Not Found")
-        print("Content-type: text/html")
-        print()
+        print(not_found())
         return
 
-    db_connection = MySQLdb.connect(host="localhost", user="root",
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
     db_cursor = db_connection.cursor()
 
     db_cursor.execute("""SELECT image
@@ -41,18 +43,15 @@ def generate_output(email_hash):
 
     # Could not find this user
     if not record:
-        print("Status: 404 Not Found")
-        print("Content-type: text/html")
-        print()
+        print(not_found())
         return
 
     image = record[0]
 
     # User found
     image_subtype = imghdr.what("", h=image)
-    print("Content-type: image/{subtype}".format(subtype=image_subtype))
-    print()
-    sys.stdout.write(image)
+    http_response = text_response("image/{}".format(image_subtype), image)
+    sys.stdout.write(http_response)
 
 
 try:

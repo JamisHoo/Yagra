@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 
+from common.response import text_response, populate_html, redirect
+
 import cgi
 import Cookie
 
@@ -18,9 +20,7 @@ def generate_output():
     cookie["password"] = ""
     cookie["password"]["expires"] = 0
 
-    print("Location: signin.py")
-    print(cookie)
-    print()
+    print(redirect("signin.py", cookie))
 
 
 try:

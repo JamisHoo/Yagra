@@ -2,7 +2,8 @@
 
 from __future__ import print_function
 
-from common import populate_html
+from common import config
+from common.response import text_response, populate_html, redirect
 
 import os
 import hashlib
@@ -29,16 +30,18 @@ def process_input():
     if email and not password and "password" in cookie:
         password = cookie["password"].value
 
-    generate_output(email, password)
+    request_method = os.environ.get("REQUEST_METHOD")
+
+    generate_output(email, password, request_method)
 
 
-def generate_output(email, password):
+def generate_output(email, password, request_method):
     # Email is not provided
     if not email:
-        print("Content-type: text/html")
-        print()
-        # TODO: print prompt info
-        print(populate_html("signin.html", {}))
+        if request_method == "POST":
+            print(text_response("text/plain", "Empty email"))
+        else:
+            print(text_response("text/html", populate_html("signin.html")))
         return
 
     cookie = Cookie.SimpleCookie()
@@ -46,20 +49,20 @@ def generate_output(email, password):
 
     # Password is not provided
     if not password:
-        print("Content-type: text/html")
-        print(cookie)
-        print()
-        # TODO: print prompt info
-        print(populate_html("signin.html", dict(email=email)))
+        if request_method == "POST":
+            print(text_response("text/plain", "Empty password", cookie))
+        else:
+            message_body = populate_html("signin.html", dict(email=email))
+            print(text_response("text/html", message_body, cookie))
         return
 
-    # TODO: move MySQL info to config file
-    db_connection = MySQLdb.connect(host="localhost", user="root",
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
     db_cursor = db_connection.cursor()
 
     UserInformation = namedtuple(
-        "UserInformation", 
+        "UserInformation",
         """email, salt, password_hash, random_password_hash, activated,
            resetting_password""")
 
@@ -73,34 +76,28 @@ def generate_output(email, password):
 
     # Couldn't find this user
     if not record:
-        print("Content-type: text/html")
-        print(cookie)
-        print()
-        print(populate_html("signin.html", dict(email=email)))
+        print(text_response("text/plain", "Account not found", cookie))
         return
 
     user_info = UserInformation._make(record)
 
     # User signed up but not yet activted
     if not user_info.activated:
-        print("Content-type: text/html")
-        print(cookie)
-        print()
-        print(populate_html("signin.html", dict(email=email)))
+        print(text_response("text/plain", "Account not activated yet", cookie))
         return
 
-
-    # Note that salt is in binary form 
+    # Note that salt is in binary form
     # while password is in ascii or hexadecimal text
     input_password_hash = hashlib.sha256(user_info.salt + password).digest()
 
     # Wrong password
-    if (input_password_hash != user_info.password_hash and 
+    if (input_password_hash != user_info.password_hash and
             input_password_hash != user_info.random_password_hash):
-        print("Content-type: text/html")
-        print(cookie)
-        print()
-        print(populate_html("signin.html", dict(email=email)))
+        if request_method == "POST":
+            print(text_response("text/plain", "Wrong password", cookie))
+        else:
+            message_body = populate_html("signin.html", dict(email=email))
+            print(text_response("text/html", message_body, cookie))
         return
 
     # Else login successful
@@ -109,20 +106,20 @@ def generate_output(email, password):
     if input_password_hash == user_info.password_hash:
         # Generate a new random password as cookie and invalidate the old one
         # TODO: random password expires some time later
-        # TODO: move constants to config file
-        random_password = os.urandom(32).encode("hex").upper()
+        random_password = (
+            os.urandom(config.random_password_length).encode("hex").upper())
 
         random_password_hash = (
             hashlib.sha256(user_info.salt + random_password).digest())
 
-        db_cursor.execute("""UPDATE users 
+        db_cursor.execute("""UPDATE users
                              SET random_passwd_hash = %s
-                             WHERE email = %s""", 
+                             WHERE email = %s""",
                           (random_password_hash, email))
         db_connection.commit()
 
         cookie["password"] = random_password
-        cookie["password"]["expires"] = 60
+        cookie["password"]["expires"] = config.random_password_expires
 
         # Invalidate the token if this user is resetting password
         if user_info.resetting_password:
@@ -133,9 +130,7 @@ def generate_output(email, password):
                               (email,))
             db_connection.commit()
 
-    print("Location: home.py")
-    print(cookie)
-    print()
+    print(redirect("home.py", cookie))
 
 
 try:

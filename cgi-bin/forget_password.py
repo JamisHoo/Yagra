@@ -2,7 +2,8 @@
 
 from __future__ import print_function
 
-from common import populate_html
+from common import config
+from common.response import text_response, populate_html, redirect
 
 import os
 import time
@@ -23,13 +24,13 @@ def process_input():
 def generate_output(email):
     # Email is not provided
     if not email:
-        print("Content-type: text/html")
-        print()
-        print(populate_html("forget_password.html", {}))
+        message_body = populate_html("forget_password.html")
+        print(text_response("text/html", message_body))
         return
 
-    db_connection = MySQLdb.connect(host="localhost", user="root", 
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
     db_cursor = db_connection.cursor()
 
     db_cursor.execute("""SELECT email FROM users WHERE email=%s""", (email,))
@@ -37,37 +38,34 @@ def generate_output(email):
 
     # Could not find this user
     if not record:
-        print("Location: forget_password.py")
-        print()
+        print(text_response("text/plain", "Account not found"))
         return
 
-    # Else generate a random token for resetting password 
-    # This token expires after a period of time or after it's used 
+    # Else generate a random token for resetting password
+    # This token expires after a period of time or after it's used
     # This token also expires after the user logs in or requests another token
-    # TODO: move constants to config file
-    token = os.urandom(32)
-    token_expires = int(time.time()) + 900  # 15-min
+    token = os.urandom(config.password_reset_token_length)
+    token_expires = int(time.time()) + config.password_reset_token_expires
 
     db_cursor.execute("""UPDATE users
-                         SET reset_passwd_token = %s, 
+                         SET reset_passwd_token = %s,
                              reset_passwd_token_expires = %s
                          WHERE email = %s""",
                       (token, token_expires, email))
     db_connection.commit()
 
     # Send an email to the user
-    from_addr = "jamis@test.jamis.xyz"
-    reset_password_link = "http://121.42.28.81/cgi-bin/reset_password.py?&token=%s" % token.encode("hex").upper()
-    email_content = populate_html("reset_password.email", 
-                                  dict(link = reset_password_link))
+    reset_password_link = "{}reset_password.py?token={}".format(
+        config.my_entire_url, token.encode("hex").upper())
 
-    smtp_server = smtplib.SMTP("localhost")
-    smtp_server.sendmail(from_addr, email, email_content)
+    email_content = populate_html("reset_password.email",
+                                  dict(link=reset_password_link))
+
+    smtp_server = smtplib.SMTP(config.smtp_host)
+    smtp_server.sendmail(config.email_from, email, email_content)
     smtp_server.quit()
-    
-    print("Content-type: text/html")
-    print()
-    print("Email sent. ")
+
+    print(text_response("text/plain", "Password reset email sent"))
 
 
 try:

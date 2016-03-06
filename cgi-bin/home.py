@@ -2,7 +2,8 @@
 
 from __future__ import print_function
 
-from common import populate_html
+from common import config
+from common.response import text_response, populate_html, redirect
 
 import os
 import cgi
@@ -26,12 +27,12 @@ def process_input():
 
 def generate_output(email, password):
     if not email or not password:
-        print("Location: signin.py")
-        print()
+        print(redirect("signin.py"))
         return
 
-    db_connection = MySQLdb.connect(host="localhost", user="root",
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
     db_cursor = db_connection.cursor()
 
     UserInformation = namedtuple(
@@ -59,8 +60,7 @@ def generate_output(email, password):
     # Wrong password
     if (input_password_hash != user_info.password_hash and
             input_password_hash != user_info.random_password_hash):
-        print("Location: signin.py")
-        print()
+        print(redirect("signin.py"))
         return
 
     # Valid email and password
@@ -69,9 +69,9 @@ def generate_output(email, password):
     else:
         image_url = base64.b16encode(user_info.email_hash)
 
-    print("Content-type: text/html")
-    print()
-    print(populate_html("home.html", dict(email=email, image_url=image_url)))
+    message_body = populate_html("home.html",
+                                 dict(email=email, image_url=image_url))
+    print(text_response("text/html", message_body))
 
 
 try:

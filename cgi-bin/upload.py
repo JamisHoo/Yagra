@@ -2,6 +2,9 @@
 
 from __future__ import print_function
 
+from common import config
+from common.response import text_response, populate_html, redirect
+
 import os
 import hashlib
 import cgi
@@ -37,16 +40,16 @@ def process_input():
 
 def generate_output(email, password, image_file):
     if not email or not password:
-        print("Location: signin.py")
-        print()
+        print(redirect("signin.py"))
         return
 
-    db_connection = MySQLdb.connect(host="localhost", user="root",
-                                    passwd="1234", db="yagra")
+    db_connection = MySQLdb.connect(
+        host=config.mysql_host, user=config.mysql_user,
+        passwd=config.mysql_password, db=config.mysql_db)
     db_cursor = db_connection.cursor()
 
     UserInformation = namedtuple(
-        "UserInformation", 
+        "UserInformation",
         "email, salt, password_hash, random_password_hash")
 
     # Fetch user information from database
@@ -57,8 +60,7 @@ def generate_output(email, password, image_file):
 
     # Could not find this user
     if not record:
-        print("Location: signin.py")
-        print()
+        print(redirect("signin.py"))
         return
 
     user_info = UserInformation._make(record)
@@ -66,10 +68,9 @@ def generate_output(email, password, image_file):
     input_password_hash = hashlib.sha256(user_info.salt + password).digest()
 
     # Wrong password
-    if (input_password_hash != user_info.password_hash and 
+    if (input_password_hash != user_info.password_hash and
             input_password_hash != user_info.random_password_hash):
-        print("Location: signin.py")
-        print()
+        print(redirect("signin.py"))
         return
 
     # Valid email and password
@@ -79,8 +80,7 @@ def generate_output(email, password, image_file):
                              WHERE email = %s""", (image_file.read(), email))
         db_connection.commit()
 
-    print("Location: home.py")
-    print()
+    print(redirect("home.py"))
 
 
 try:
