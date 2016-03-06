@@ -25,21 +25,29 @@ def process_input():
     image_file = form["userfile"].file if "userfile" in form else None
 
     # Check whether is an empty file
+    image_file_size = 0
     if image_file:
         image_file.seek(0, 2)  # To end of file
-        if image_file.tell() == 0:
+        image_file_size = image_file.tell()
+        if image_file_size == 0:
             image_file = None
         else:
             image_file.seek(0)  # To beginning of file
 
-    # TODO: image too large?
-
-    generate_output(email, password, image_file)
+    generate_output(email, password, image_file, image_file_size)
 
 
-def generate_output(email, password, image_file):
+def generate_output(email, password, image_file, image_file_size):
     if not email or not password:
         print(redirect("signin.py"))
+        return
+
+    # File too large
+    if image_file_size > config.image_max_size:
+        message_body = (
+            "Image size too large. "
+            "Maximum allowed size is {} bytes. ".format(config.image_max_size))
+        print(text_response("text/plain", message_body))
         return
 
     db_connection = MySQLdb.connect(
