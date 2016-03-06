@@ -47,7 +47,6 @@ def generate_output(email, password):
     activate_token = os.urandom(32)
     
     # TODO: check activate token field when signing in and resetting password
-    # TODO: Handle primary key duplicate
     try:
         db_cursor.execute(
             """INSERT INTO users 
