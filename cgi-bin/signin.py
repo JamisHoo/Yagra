@@ -105,7 +105,6 @@ def generate_output(email, password, request_method):
     # If signin by password
     if input_password_hash == user_info.password_hash:
         # Generate a new random password as cookie and invalidate the old one
-        # TODO: random password expires some time later
         random_password = (
             os.urandom(config.random_password_length).encode("hex").upper())
 
