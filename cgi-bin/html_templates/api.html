@@ -1,0 +1,216 @@
+<html>
+
+<head>
+<title>Yagra</title>
+</head>
+
+<body>
+
+<h1>Developer Resources</h1>
+
+<p>
+Yagra 'APIs' require no authentication, and are all based around simple HTTP 
+GET requests. See the contents below to find out more about constructing 
+request URLs, different implementation options and more.
+</p>
+
+<p>
+Learn about how to generate the URLs required to request Yagra Images and 
+Profile data.
+</p>
+
+<h2>Creating the Hash</h2>
+
+<p>
+All URLs on Yagra are based on the use of the hashed value of an email 
+address. Images and profiles are both accessed via the hash of an email, and 
+it is considered the primary way of identifying an identity within the system. 
+To ensure a consistent and accurate hash, the following steps should be taken 
+to create a hash:
+</p>
+
+<ol>
+<li>Trim leading and trailing whitespace from an email address</li>
+<li>md5 hash the final string</li>
+</ol>
+
+<p>
+As an example, let's say we start with "MyEmailAddress@example.com " (note the 
+trailing space which our hypothetical user entered by mistake). If we md5 
+encode that string directly, we get the following (in Python 2):
+</p>
+
+<pre><code>
+>>> hashlib.md5("MyEmailAddress@example.com ").hexdigest()
+'f9879d71855b5ff21e4963273a886bfc'
+</code></pre>
+
+<p>
+If we now run that same email address through the above process, you will see 
+that we get a different result (again in Python 2):
+</p>
+
+<pre><code>
+>>> hashlib.md5("MyEmailAddress@example.com".strip()).hexdigest()
+'a957567ba0ce0106c0d1cfa646acdb71'
+</code></pre>
+
+<p>
+Once you have generated a consistent hash, you can then request an image.
+</p>
+
+<h2>Yagra Image Requests</h2>
+
+<h3>Base Request</h3>
+
+<p>
+Yagra images may be requested just like a normal image, using an IMG tag. 
+To get an image specific to a user, you must first calculate their email hash.
+</p>
+
+<p>
+The most basic image request URL looks like this:
+</p>
+
+<code>
+{0[my_entire_url]}HASH
+</code>
+
+<p>
+where HASH is replaced with the calculated hash for the specific email address 
+you are requesting.  For example, here is my base URL:
+</p>
+
+<code>
+{0[my_entire_url]}F04D5E66FF52BC9589E0B08368E8E731
+</code>
+
+<p>
+When wrapped in an IMG tag, that URL will produce:
+</p>
+
+<xmp>
+<img src="{0[my_entire_url]}F04D5E66FF52BC9589E0B08368E8E731" />
+</xmp>
+
+<p>
+<img src="{0[my_entire_url]}F04D5E66FF52BC9589E0B08368E8E731" />
+</p>
+
+<h3>Size</h3>
+
+<p>
+You can only request the image in its original size.
+</p>
+
+<h3>Default Image</h3>
+
+<p>
+What happens when an email address has no matching Yagra image? By default, 
+this:
+<p>
+
+<p><img src="{0[my_entire_url]}00000000000000000000000000000000" /> </p>
+
+<p>
+If you'd prefer to use your own default image (perhaps your logo, a funny face,
+whatever), then you can easily do so by supplying the URL to an image in the 
+d= or default= parameter. The URL should be URL-encoded to ensure that it 
+carries across correctly, for example:
+</p>
+
+<xmp>
+<img src="{0[my_entire_url]}00000000000000000000000000000000?d=http%3A%2F%2Fwww.gravatar.com%2Favatar%2F0" />
+</xmp>
+
+<p>
+To URL-encode a string in Python, you can use something like this:
+</p>
+
+<pre>
+<code>
+>>> urllib.quote_plus("http://www.gravatar.com/avatar/0")
+'http%3A%2F%2Fwww.gravatar.com%2Favatar%2F0'
+</code>
+</pre>
+
+<p>
+When you include a default image, Yagra will automatically redirect to that 
+image if there is no image associated with the requested email hash. 
+</p>
+
+<p>
+In addition to allowing you to use your own image, Yagra has a number of 
+built in options which you can also use as defaults. To use these options, 
+just pass one of the following keywords as the d= parameter to an image 
+request:
+</p>
+
+<ul>
+<li>404: do not load any image if none is associated with the email hash, 
+instead return an HTTP 404 (File Not Found) response</li>
+<li>blank: a transparent PNG image </li>
+</ul>
+
+<h3>Force Default</h3>
+
+<p>
+If for some reason you wanted to force the default image to always load, 
+you can do that by using the f= or forcedefault= parameter, and setting its 
+value to y.
+</p>
+
+<code>
+{0[my_entire_url]}F04D5E66FF52BC9589E0B08368E8E731?f=y
+</code>
+
+<h3>Rating</h3>
+
+<p>
+Yagra allows users to self-rate their images so that they can indicate if an 
+image is appropriate for a certain audience. By default, only 'G' rated images 
+are displayed unless you indicate that you would like to see higher ratings. 
+Using the r= or rating= parameters, you may specify one of the following 
+ratings to request images up to and including that rating:
+</p>
+
+<ul>
+<li>g: suitable for display on all websites with any audience type.</li>
+<li>pg: may contain rude gestures, provocatively dressed individuals, 
+the lesser swear words, or mild violence.</li>
+<li>r: may contain such things as harsh profanity, intense violence, nudity, 
+or hard drug use.</li>
+<li>x: may contain hardcore sexual imagery or extremely disturbing violence.
+</li>
+</ul>
+
+<p>
+If the requested email hash does not have an image meeting the requested 
+rating level, then the default image is returned (or the specified default, 
+as per above)
+</p>
+
+<p>
+To allow images rated G or PG use something like this:
+</p>
+
+<code>
+{0[my_entire_url]}F04D5E66FF52BC9589E0B08368E8E731?r=pg
+</code>
+
+<h3>Combining Parameters</h3>
+
+<p>
+You may combine any and all of the above parameters to produce more 
+complex/refined requests. For example, this URL will request an avatar rated 
+G or PG, defaulting to a 404 response (no image) if there is not one 
+associated with the requested email hash:
+</p>
+
+<code>
+{0[my_entire_url]}F04D5E66FF52BC9589E0B08368E8E731?r=pg&d=404
+</code>
+
+</body>
+
+</html>
