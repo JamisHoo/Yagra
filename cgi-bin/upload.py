@@ -23,6 +23,9 @@ def process_input():
     # Load image uploaded from form
     form = cgi.FieldStorage()
     image_file = form["userfile"].file if "userfile" in form else None
+    rating = form.getfirst("rating")
+    if rating not in ["g", "pg", "r", "x"]:
+        rating = "g"
 
     # Check whether is an empty file
     image_file_size = 0
@@ -34,10 +37,10 @@ def process_input():
         else:
             image_file.seek(0)  # To beginning of file
 
-    generate_output(email, password, image_file, image_file_size)
+    generate_output(email, password, image_file, image_file_size, rating)
 
 
-def generate_output(email, password, image_file, image_file_size):
+def generate_output(email, password, image_file, image_file_size, rating):
     if not email or not password:
         print(redirect("signin.py"))
         return
@@ -83,8 +86,9 @@ def generate_output(email, password, image_file, image_file_size):
     # Valid email and password
     if image_file:
         db_cursor.execute("""UPDATE users
-                             SET image = %s
-                             WHERE email = %s""", (image_file.read(), email))
+                             SET image = %s, rating = %s
+                             WHERE email = %s""",
+                          (image_file.read(), rating, email))
         db_connection.commit()
 
     print(redirect("home.py"))

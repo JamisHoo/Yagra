@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from collections import namedtuple
 
 from common import config
 from common.response import text_response, populate_html, redirect, not_found
@@ -60,13 +61,20 @@ def generate_output(email_hash, default, force_default, rating):
             passwd=config.mysql_password, db=config.mysql_db)
         db_cursor = db_connection.cursor()
 
-        db_cursor.execute("""SELECT image
+        ImageInformation = namedtuple("ImageInformation", "image, rating")
+
+        db_cursor.execute("""SELECT image, rating
                              FROM users
                              WHERE email_hash = %s""",
                           (email_hash.decode("hex"), ))
         record = db_cursor.fetchone()
 
-        image = record[0] if record else None
+        if record:
+            # Image found and the rating meeting requested rating level
+            image_info = ImageInformation._make(record)
+            image = image_info.image if image_info.rating <= rating else None
+        else:
+            image = None
 
     # Invalid hash or account not found or force to load default image
     # Return default

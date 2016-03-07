@@ -12,14 +12,37 @@
 
 <p><img src="{0[image_url]}" /></p>
 
+<p>Rated <strong>{0[rating]}</strong></p>
+
 <p><a href="remove_image.py">Remove image</a></p>
 
 <form enctype="multipart/form-data" action="upload.py" method="post">
     <p>
         <input type="file" name="userfile" />
+        <br />
+        <input type="radio" name="rating" value="g" checked="checked" /> G
+        <input type="radio" name="rating" value="pg" /> PG
+        <input type="radio" name="rating" value="r" /> R
+        <input type="radio" name="rating" value="x" /> X
+        <br />
         <input type="submit" name="upload" value="Upload" />
     </p>
 </form>
+
+<ul>
+<li>A G rated avatar is suitable for display on all websites with any 
+audience type. </li>
+
+<li>PG rated avatars may contain rude gestures, provocatively dressed 
+individuals, the lesser swear words, or mild violence. </li>
+
+<li>R rated avatars may contain such things as harsh profanity, intense 
+violence, nudity, or hard drug use. </li>
+
+<li>
+X rated avatars may contain hardcore sexual imagery or extremely disturbing 
+violence. </li>
+</ul>
 
 </body>
 
