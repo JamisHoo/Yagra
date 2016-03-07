@@ -61,7 +61,7 @@ def generate_output(email, password):
 
     # Valid email and password
     db_cursor.execute("""UPDATE users
-                         SET image = NULL
+                         SET image = NULL, rating = NULL
                          WHERE email = %s""", (email, ))
     db_connection.commit()
 
