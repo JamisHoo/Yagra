@@ -9,7 +9,6 @@ from common.response import text_response, populate_html, redirect
 import os
 import cgi
 import hashlib
-import base64
 import MySQLdb
 import Cookie
 
@@ -66,7 +65,7 @@ def generate_output(email, password):
     if user_info.no_image:
         image_url = ""
     else:
-        image_url = base64.b16encode(user_info.email_hash)
+        image_url = user_info.email_hash.encode("hex").upper()
 
     message_body = populate_html("home.html",
                                  dict(email=email, image_url=image_url))
