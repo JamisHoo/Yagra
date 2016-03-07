@@ -78,6 +78,9 @@ def generate_output(email_hash, default, force_default, rating):
         elif default == "404":
             print(not_found())
             return
+        # Default is blank
+        elif default == "blank":
+            image = open(config.blank_image, "rb").read()
         # Else treat it as a URL
         else:
             print(redirect(urllib.unquote(default)))
