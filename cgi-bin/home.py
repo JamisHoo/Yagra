@@ -35,12 +35,11 @@ def generate_output(email, password):
 
     UserInformation = namedtuple(
         "UserInformation",
-        """email, email_hash, salt, password_hash, random_password_hash,
-           no_image, rating""")
+        "email, email_hash, salt, password_hash, random_password_hash, rating")
 
     # Fetch user information from database
     db_cursor.execute("""SELECT email, email_hash, salt, passwd_hash,
-                                random_passwd_hash, ISNULL(image), rating
+                                random_passwd_hash, rating
                          FROM users
                          WHERE email = %s""", (email,))
     record = db_cursor.fetchone()
@@ -61,11 +60,7 @@ def generate_output(email, password):
         print(redirect("signin.py"))
         return
 
-    # Valid email and password
-    if user_info.no_image:
-        image_url = ""
-    else:
-        image_url = "{}?r=x".format(user_info.email_hash.encode("hex").upper())
+    image_url = "{}?r=x".format(user_info.email_hash.encode("hex").upper())
 
     rating = user_info.rating.upper() if user_info.rating else "G"
 
