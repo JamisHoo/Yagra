@@ -10,14 +10,18 @@ import sys
 import string
 import imghdr
 import hashlib
+import urlparse
 import cgi
 import MySQLdb
 
 
 def process_input():
-    request_uri = os.environ.get("REQUEST_URI")
+    url_parse_result = urlparse.urlparse(os.environ.get("REQUEST_URI"))
 
-    email_hash = os.path.basename(request_uri)
+    request_path = url_parse_result.path
+    request_query_string = url_parse_result.query
+
+    email_hash = os.path.basename(request_path)
 
     generate_output(email_hash)
 
