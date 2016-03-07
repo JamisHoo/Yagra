@@ -10,7 +10,6 @@ import sys
 import string
 import imghdr
 import hashlib
-import base64
 import cgi
 import MySQLdb
 
@@ -38,7 +37,7 @@ def generate_output(email_hash):
     db_cursor.execute("""SELECT image
                          FROM users
                          WHERE email_hash = %s""",
-                      (base64.b16decode(email_hash.upper()),))
+                      (email_hash.decode("hex"), ))
     record = db_cursor.fetchone()
 
     # Could not find this user
