@@ -45,3 +45,4 @@ image_max_size = 3 * 1024 * 1024
 html_templates_dir = "html_templates/"
 # Default image path
 default_image = os.path.join(html_templates_dir, "default.png")
+blank_image = os.path.join(html_templates_dir, "blank.png")
