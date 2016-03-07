@@ -28,7 +28,8 @@ def redirect(location, cookie=None):
 
 
 def not_found():
-    response = "Status: 404 Not Found"
+    response = "Status: 404 Not Found" + "\n"
+    response += "\n"
     return response
 
 
