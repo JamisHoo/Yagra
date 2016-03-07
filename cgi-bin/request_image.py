@@ -19,14 +19,34 @@ def process_input():
     url_parse_result = urlparse.urlparse(os.environ.get("REQUEST_URI"))
 
     request_path = url_parse_result.path
-    request_query_string = url_parse_result.query
+
+    query_parse_result = urlparse.parse_qs(os.environ.get("QUERY_STRING"))
+
+    default = config.default_image
+    if "default" in query_parse_result:
+        default = query_parse_result["default"][0]
+    elif "d" in query_parse_result:
+        default = query_parse_result["d"][0]
+
+    force_default = False
+    force_default = force_default or "force_default" in query_parse_result
+    force_default = force_default or "f" in query_parse_result
+
+    rating = "g"
+    ratings = ["g", "pg", "r", "x"]
+    if "rating" in query_parse_result:
+        rating = query_parse_reuslt["rating"][0]
+    elif "r" in query_parse_result:
+        rating = query_parse_result["r"][0]
+    if rating not in ratings:
+        rating = "g"
 
     email_hash = os.path.basename(request_path)
 
-    generate_output(email_hash)
+    generate_output(email_hash, default, force_default, rating)
 
 
-def generate_output(email_hash):
+def generate_output(email_hash, default, force_default, rating):
     # Invalid hash, hexadecimal MD5 hash value should be 32 bytes
     if (len(email_hash) != hashlib.md5().digest_size * 2 or
             any(c not in string.hexdigits for c in email_hash)):
