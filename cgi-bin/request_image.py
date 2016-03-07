@@ -11,6 +11,7 @@ import string
 import imghdr
 import hashlib
 import urlparse
+import urllib
 import cgi
 import MySQLdb
 
@@ -22,7 +23,7 @@ def process_input():
 
     query_parse_result = urlparse.parse_qs(os.environ.get("QUERY_STRING"))
 
-    default = config.default_image
+    default = ""
     if "default" in query_parse_result:
         default = query_parse_result["default"][0]
     elif "d" in query_parse_result:
@@ -47,31 +48,42 @@ def process_input():
 
 
 def generate_output(email_hash, default, force_default, rating):
-    # Invalid hash, hexadecimal MD5 hash value should be 32 bytes
-    if (len(email_hash) != hashlib.md5().digest_size * 2 or
-            any(c not in string.hexdigits for c in email_hash)):
-        print(not_found())
-        return
+    # Hexadecimal MD5 hash value should be 32 bytes
+    invalid_hash = (len(email_hash) != hashlib.md5().digest_size * 2 or
+                    any(c not in string.hexdigits for c in email_hash))
 
-    db_connection = MySQLdb.connect(
-        host=config.mysql_host, user=config.mysql_user,
-        passwd=config.mysql_password, db=config.mysql_db)
-    db_cursor = db_connection.cursor()
+    # Load image from db
+    image = None
+    if not invalid_hash and not force_default:
+        db_connection = MySQLdb.connect(
+            host=config.mysql_host, user=config.mysql_user,
+            passwd=config.mysql_password, db=config.mysql_db)
+        db_cursor = db_connection.cursor()
 
-    db_cursor.execute("""SELECT image
-                         FROM users
-                         WHERE email_hash = %s""",
-                      (email_hash.decode("hex"), ))
-    record = db_cursor.fetchone()
+        db_cursor.execute("""SELECT image
+                             FROM users
+                             WHERE email_hash = %s""",
+                          (email_hash.decode("hex"), ))
+        record = db_cursor.fetchone()
 
-    # Could not find this user
-    if not record:
-        print(not_found())
-        return
+        image = record[0] if record else None
 
-    image = record[0]
+    # Invalid hash or account not found or force to load default image
+    # Return default
+    if not image:
+        # Default not provided, use default image
+        if not default:
+            image = open(config.default_image, "rb").read()
+        # Default is 404
+        elif default == "404":
+            print(not_found())
+            return
+        # Else treat it as a URL
+        else:
+            print(redirect(urllib.unquote(default)))
+            return
 
-    # User found
+    # Make HTTP response
     image_subtype = imghdr.what("", h=image)
     http_response = text_response("image/{}".format(image_subtype), image)
     sys.stdout.write(http_response)
