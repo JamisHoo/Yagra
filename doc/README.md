@@ -42,13 +42,19 @@
 以Apache HTTP Server为例。实际操作因平台而异，不必拘泥一格。
 
 1. 安装Apache HTTP Server
+
 2. 安装MySQL Server
+
 3. 安装MySQL-python
+
 4. 安装Postfix
+
 5. 配置Apache HTTP Server
     
     把cgi-bin目录中的文件复制到适当的位置（例如`/var/www/cgi-bin/`）
     
+    修改httpd.conf
+
     ```
     <IfModule alias_module>
         ScriptAliasMatch /[0-9A-Fa-f]{32}$ "/var/www/cgi-bin/request_image.py"
@@ -58,6 +64,8 @@
     
 6. 配置MySQL Server
     
+    运行以下命令
+
     ```
     CREATE DATABASE yagra;
     USE yagra;
@@ -81,4 +89,3 @@
 7. 配置config.py
 
     修改cgi-bin/common/config.py，文件内有注释，不在此赘述。
-    
