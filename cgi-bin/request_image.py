@@ -31,7 +31,7 @@ def process_input():
         default = query_parse_result["d"][0]
 
     force_default = False
-    force_default = force_default or "force_default" in query_parse_result
+    force_default = force_default or "forcedefault" in query_parse_result
     force_default = force_default or "f" in query_parse_result
 
     rating = "g"
