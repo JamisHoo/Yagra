@@ -88,4 +88,4 @@
     
 7. 配置config.py
 
-    修改cgi-bin/common/config.py，文件内有注释，不在此赘述。
+    修改`cgi-bin/common/config.py`，文件内有注释，不在此赘述。
