@@ -22,18 +22,22 @@ def process_input():
 
     request_path = url_parse_result.path
 
+    # Parse query string
     query_parse_result = urlparse.parse_qs(os.environ.get("QUERY_STRING"))
 
+    # default
     default = ""
     if "default" in query_parse_result:
         default = query_parse_result["default"][0]
     elif "d" in query_parse_result:
         default = query_parse_result["d"][0]
 
+    # forcedefault
     force_default = False
     force_default = force_default or "forcedefault" in query_parse_result
     force_default = force_default or "f" in query_parse_result
 
+    # rating
     rating = "g"
     ratings = ["g", "pg", "r", "x"]
     if "rating" in query_parse_result:
