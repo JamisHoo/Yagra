@@ -37,7 +37,7 @@ def process_input():
     rating = "g"
     ratings = ["g", "pg", "r", "x"]
     if "rating" in query_parse_result:
-        rating = query_parse_reuslt["rating"][0]
+        rating = query_parse_result["rating"][0]
     elif "r" in query_parse_result:
         rating = query_parse_result["r"][0]
     if rating not in ratings:
