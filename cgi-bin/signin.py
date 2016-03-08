@@ -82,7 +82,7 @@ def generate_output(email, password, request_method):
 
     # User signed up but not yet activted
     if not user_info.activated:
-        print(text_response("text/plain", "Account not activated yet", cookie))
+        print(redirect("resend_activation.py"))
         return
 
     # Note that salt is in binary form
