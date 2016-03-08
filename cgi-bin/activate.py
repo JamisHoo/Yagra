@@ -44,6 +44,7 @@ def generate_output(token):
 
     email = record[0]
 
+    # activate_token == NULL means activated
     db_cursor.execute("""UPDATE users
                          SET activate_token = NULL
                          WHERE email = %s""", (email,))
