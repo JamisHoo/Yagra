@@ -27,6 +27,7 @@ def process_input():
 
 
 def generate_output(token, password, request_method):
+    # Invalid token
     if (not token or len(token) != config.password_reset_token_length * 2 or
             any(c not in string.hexdigits for c in token)):
         print(text_response("text/plain", "Empty token"))
